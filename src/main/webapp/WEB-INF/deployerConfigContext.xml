@@ -112,22 +112,15 @@
 			+-->
 		<property name="authenticationHandlers">
 			<list>
-				<!--
-					| This is the authentication handler that authenticates services by means of callback via SSL, thereby validating
-					| a server side SSL certificate.
-					+-->
-				<bean class="org.jasig.cas.authentication.handler.support.HttpBasedServiceCredentialsAuthenticationHandler"
-					p:httpClient-ref="httpClient" />
-				<!--
-					| This is the authentication handler declaration that every CAS deployer will need to change before deploying CAS 
-					| into production.  The default SimpleTestUsernamePasswordAuthenticationHandler authenticates UsernamePasswordCredentials
-					| where the username equals the password.  You will need to replace this with an AuthenticationHandler that implements your
-					| local authentication strategy.  You might accomplish this by coding a new such handler and declaring
-					| edu.someschool.its.cas.MySpecialHandler here, or you might use one of the handlers provided in the adaptors modules.
-					+-->
-				<bean 
-					class="org.jasig.cas.authentication.handler.support.SimpleTestUsernamePasswordAuthenticationHandler" />
-			</list>
+	            <bean class="com.domain.authentication.handler.DatabaseAuthenticationHandler">
+	                <property name="jdbcTemplate" ref="slaveJdbcTemplate" />
+	                <!--(1)--><property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? LIMIT 1" />
+	                <!--(2)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ? LIMIT 1" />-->
+	                <!--(3)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ?" />-->
+	                <!-- (1)适用于单一条件登录；（2）适用于多条件，且这些条件中不会出现相同值的情况；（3）适用于多条件，但这些条件中可能会存在相同值的情况，例如：存在 username 为：13800138000，和 mobile 也为：13800138000 的不同两条用户数据 -->
+	                <property name="passwordEncoder" ref="passwordEncoder" />
+	            </bean>
+        	</list>
 		</property>
 	</bean>
 
@@ -215,4 +208,6 @@
       </list>
     </property>
   </bean>
+  
+
 </beans>

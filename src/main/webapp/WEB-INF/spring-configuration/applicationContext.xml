@@ -107,5 +107,50 @@
     <!-- The scheduler bean wires up any triggers that define scheduled tasks -->
     <bean id="scheduler" class="org.jasig.cas.util.AutowiringSchedulerFactoryBean"/>
     
-            
+   <!--  <bean id="masterDataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+	        <property name="driverClassName" value="${jdbc.driver}" />
+			<property name="url" value="${jdbc.url}" />
+			<property name="username" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+			<property name="defaultAutoCommit" value="false" />
+    	</bean> 
+    	
+    	<bean id="slaveDataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+	        <property name="driverClassName" value="${jdbc.driver}" />
+			<property name="url" value="${jdbc.url}" />
+			<property name="username" value="${jdbc.username}" />
+			<property name="password" value="${jdbc.password}" />
+			<property name="defaultAutoCommit" value="false" />
+    	</bean>     -->
+    	
+    	 <bean id = "masterDataSource" class = "org.apache.commons.dbcp.BasicDataSource" >
+
+          	<property name = "driverClassName" value = "com.mysql.jdbc.Driver" />
+
+              <property name = "url" value = "jdbc:mysql://localhost:3306/shiro" />
+
+              <property name = "username" value = "root" />
+
+              <property name = "password" value = "root" />
+
+   		 </bean >
+    	<bean id = "slaveDataSource" class = "org.apache.commons.dbcp.BasicDataSource" >
+
+          	<property name = "driverClassName" value = "com.mysql.jdbc.Driver" />
+
+              <property name = "url" value = "jdbc:mysql://localhost:3306/shiro" />
+
+              <property name = "username" value = "root" />
+
+              <property name = "password" value = "root" />
+
+   		 </bean >
+   		 
+   		<bean id="masterJdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate"
+   			 p:dataSource-ref="masterDataSource" />
+		<bean id="slaveJdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate"
+  			  p:dataSource-ref="slaveDataSource" />
+  			  
+  		<bean id="passwordEncoder" class="com.buession.cas.authentication.handler.PasswordEncoder"
+    			p:characterEncoding="UTF-8" />	  
 </beans>

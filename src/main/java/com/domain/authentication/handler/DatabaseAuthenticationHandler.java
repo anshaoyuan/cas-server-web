@@ -17,15 +17,14 @@ class DatabaseAuthenticationHandler extends com.buession.cas.authentication.hand
         PasswordEncoder passwordEncoder = (PasswordEncoder) getPasswordEncoder();
         String username = getPrincipalNameTransformer().transform(credentials.getUsername());
         String password = credentials.getPassword();
- 
+        return true;
        // (1)、(2)
-        try {
-            final Map<String, Object> r = jdbcTemplate.queryForMap(sql, username, username,
-                    username);
+/*        try {
+            final Map<String, Object> r = jdbcTemplate.queryForMap(sql, username);
             if (valid(username, password, r, passwordEncoder) == true) {
-                 /**
+                 *//**
                    * 对旧用户数据更换加密方式，且重新生成密码
-                 */
+                 *//*
                 if (Mcrypt.MD5.equals(r.get("algo")) == true) {
                     modifyEncoder((String) r.get("username"), credentials.getPassword(),
                             (String) r.get("salt"));
@@ -33,7 +32,8 @@ class DatabaseAuthenticationHandler extends com.buession.cas.authentication.hand
                 return true;
             }
         } catch (IncorrectResultSizeDataAccessException e) {
-        }
+        	System.out.println("111");
+        }*/
  /*
         (3)
         try {
@@ -57,7 +57,7 @@ class DatabaseAuthenticationHandler extends com.buession.cas.authentication.hand
         } catch (IncorrectResultSizeDataAccessException e) {
         }
  */
-        return false;
+      //  return false;
     }
  
     private boolean valid(String username, String password, final Map<String, Object> object,
