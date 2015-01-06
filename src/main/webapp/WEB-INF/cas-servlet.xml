@@ -23,8 +23,13 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:webflow="http://www.springframework.org/schema/webflow-config"
        xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-       http://www.springframework.org/schema/webflow-config http://www.springframework.org/schema/webflow-config/spring-webflow-config-2.3.xsd">
+       http://www.springframework.org/schema/webflow-config http://www.springframework.org/schema/webflow-config/spring-webflow-config-2.3.xsd 
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd 
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
   <import resource="spring-configuration/propertyFileConfigurer.xml"/>
 
@@ -273,4 +278,30 @@
 
   <bean id="credentialsValidator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"
         p:messageInterpolator-ref="messageInterpolator"/>
+  <bean id="oAuthAction" class="com.buession.cas.web.flow.OAuthAction"
+    p:configuration-ref="oAuthConfiguration" 
+    p:centralAuthenticationService-ref="centralAuthenticationService" />     
+   
+   <bean id="oAuthBindCheckAction" class="com.sso.web.flow.OAuthBindCheckAction"
+    p:configuration-ref="oAuthConfiguration" 
+    p:jdbcTemplate-ref="slaveJdbcTemplate" 
+    p:sql="SELECT count(0) FROM `members_bind` WHERE `type` = ? AND `key` = ? LIMIT 1" />
+<!-- OAuth 用户绑定 Action -->
+<bean id="oAuthBindAction" class="com.sso.web.flow.OAuthBindAction"
+    p:configuration-ref="oAuthConfiguration" 
+    p:jdbcTemplate-ref="masterJdbcTemplate"
+    p:transactionManager-ref="transactionManager"
+    p:passwordEncoder-ref="passwordEncoder" />  
+    
+ 	<bean id="transactionManager" 
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager"> 
+        <property name="dataSource"> 
+            <ref bean="slaveDataSource" /> 
+        </property> 
+    </bean>
+
+  
+    <tx:annotation-driven/>
+
+
 </beans>

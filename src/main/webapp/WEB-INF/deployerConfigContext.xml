@@ -51,6 +51,14 @@
 		+-->
 	<bean id="authenticationManager"
 		class="org.jasig.cas.authentication.AuthenticationManagerImpl">
+		<property name="authenticationMetaDataPopulators">
+	        <list>
+	            <!-- 如果想从 OAuth 获取用户信息，则需添加 -->
+	            <bean class="com.buession.cas.oauth.authentication.OAuthAuthenticationMetaDataPopulator" />
+	            <!-- 或者 -->
+	           <!--  <bean class="org.jasig.cas.support.oauth.authentication.OAuthAuthenticationMetaDataPopulator" /> -->
+	        </list>
+    	</property>
 		
 		<!-- Uncomment the metadata populator to allow clearpass to capture and cache the password
 		     This switch effectively will turn on clearpass.
@@ -79,49 +87,37 @@
 			| You will need to change this list if you are identifying services by something more or other than their callback URL.
 			+-->
 		<property name="credentialsToPrincipalResolvers">
-			<list>
-				<!--
-					| UsernamePasswordCredentialsToPrincipalResolver supports the UsernamePasswordCredentials that we use for /login 
-					| by default and produces SimplePrincipal instances conveying the username from the credentials.
-					| 
-					| If you've changed your LoginFormAction to use credentials other than UsernamePasswordCredentials then you will also
-					| need to change this bean declaration (or add additional declarations) to declare a CredentialsToPrincipalResolver that supports the
-					| Credentials you are using.
-					+-->
-				<bean class="org.jasig.cas.authentication.principal.UsernamePasswordCredentialsToPrincipalResolver" >
-					<property name="attributeRepository" ref="attributeRepository" />
-				</bean>
-				<!--
-					| HttpBasedServiceCredentialsToPrincipalResolver supports HttpBasedCredentials.  It supports the CAS 2.0 approach of
-					| authenticating services by SSL callback, extracting the callback URL from the Credentials and representing it as a
-					| SimpleService identified by that callback URL.
-					|
-					| If you are representing services by something more or other than an HTTPS URL whereat they are able to
-					| receive a proxy callback, you will need to change this bean declaration (or add additional declarations).
-					+-->
-				<bean
-					class="org.jasig.cas.authentication.principal.HttpBasedServiceCredentialsToPrincipalResolver" />
-			</list>
+			 <list>
+            <!--  -->
+            	<bean class="org.jasig.cas.support.oauth.authentication.principal.OAuthCredentialsToPrincipalResolver"
+                	p:attributeRepository-ref="oAuthAttributeRepositoryDao" />
+        	</list>
 		</property>
-
+ 		<property name="authenticationHandlers">
+       	 <list>
+            <!-- 使其 CAS 支持 OAuth 认证 -->
+            <bean class="org.jasig.cas.support.oauth.authentication.handler.support.OAuthAuthenticationHandler"
+                p:configuration-ref="oAuthConfiguration" />
+       	 </list>
+   		 </property>
 		<!--
 			| Whereas CredentialsToPrincipalResolvers identify who it is some Credentials might authenticate, 
 			| AuthenticationHandlers actually authenticate credentials.  Here we declare the AuthenticationHandlers that
 			| authenticate the Principals that the CredentialsToPrincipalResolvers identified.  CAS will try these handlers in turn
 			| until it finds one that both supports the Credentials presented and succeeds in authenticating.
 			+-->
-		<property name="authenticationHandlers">
+		<!-- <property name="authenticationHandlers">
 			<list>
 	            <bean class="com.domain.authentication.handler.DatabaseAuthenticationHandler">
 	                <property name="jdbcTemplate" ref="slaveJdbcTemplate" />
-	                <!--(1)--><property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? LIMIT 1" />
-	                <!--(2)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ? LIMIT 1" />-->
-	                <!--(3)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ?" />-->
-	                <!-- (1)适用于单一条件登录；（2）适用于多条件，且这些条件中不会出现相同值的情况；（3）适用于多条件，但这些条件中可能会存在相同值的情况，例如：存在 username 为：13800138000，和 mobile 也为：13800138000 的不同两条用户数据 -->
+	                (1)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? LIMIT 1" />
+	                (2)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ? LIMIT 1" />
+	                (3)<property name="sql" value="SELECT `password`, `salt`, `algo` FROM `member` WHERE `username` = ? OR `email` = ? OR `mobile` = ?" />
+	                (1)适用于单一条件登录；（2）适用于多条件，且这些条件中不会出现相同值的情况；（3）适用于多条件，但这些条件中可能会存在相同值的情况，例如：存在 username 为：13800138000，和 mobile 也为：13800138000 的不同两条用户数据
 	                <property name="passwordEncoder" ref="passwordEncoder" />
 	            </bean>
         	</list>
-		</property>
+		</property> -->
 	</bean>
 
 
@@ -141,17 +137,35 @@
 	Bean that defines the attributes that a service may return.  This example uses the Stub/Mock version.  A real implementation
 	may go against a database or LDAP server.  The id should remain "attributeRepository" though.
 	 -->
-	<bean id="attributeRepository"
-		class="org.jasig.services.persondir.support.StubPersonAttributeDao">
-		<property name="backingMap">
-			<map>
-				<entry key="uid" value="uid" />
-				<entry key="eduPersonAffiliation" value="eduPersonAffiliation" /> 
-				<entry key="groupMembership" value="groupMembership" />
-			</map>
-		</property>
+	<bean id="oAuthAttributeRepositoryDao" class="com.sso.persondir.OAuthSingleRowJdbcPersonAttributeDao">
+	    <property name="jdbcTemplate" ref="slaveJdbcTemplate" />
+	    <property name="queryTemplate" value="SELECT `m`.* FROM `members` AS `m`, `members_bind` AS `mb` WHERE `m`.`id` = `mb`.`members_id` AND `mb`.`type` = ? AND `mb`.`app_userid` = ? LIMIT 1" />
+	    <property name="resultAttributeMapping">
+	        <map>
+	            <entry key="uid" value="id" />
+	            <entry key="username" value="username" />
+	            <entry key="email" value="email" />
+	        </map>
+	    </property>
 	</bean>
-	
+	<bean id="attributeRepository" class="com.buession.cas.service.persondir.support.jdbc.SingleRowJdbcPersonAttributeDao">
+    <property name="jdbcTemplate" ref="slaveJdbcTemplate" />
+    <property name="queryTemplate" value="SELECT * FROM `member` WHERE {0} LIMIT 1" />
+    <property name="queryAttributeMapping">
+        <map>
+            <entry key="username" value="username" />
+        </map>
+    </property>
+    <property name="resultAttributeMapping">
+        <map>
+            <!-- key 对应数据库字段名，value 为查询结果转换为 Map 的 key -->
+            <entry key="id" value="id" />
+            <entry key="username" value="username" />
+            <entry key="email" value="email" />
+          
+        </map>
+    </property>
+</bean>
 	<!-- 
 	Sample, in-memory data store for the ServiceRegistry. A real implementation
 	would probably want to replace this with the JPA-backed ServiceRegistry DAO
@@ -162,13 +176,25 @@
         class="org.jasig.cas.services.InMemoryServiceRegistryDaoImpl">
             <property name="registeredServices">
                 <list>
-                    <bean class="org.jasig.cas.services.RegexRegisteredService">
+	                
+                      <bean class="org.jasig.cas.services.RegexRegisteredService">
+	                      <property name="allowedAttributes">
+			                    <list>
+			                        <!--
+			                        value 的值对应 attributeRepositoryDao resultAttributeMapping 的 entry 的 value 属性
+			                        只有这里定义了元素，才会真正从 resultAttributeMapping 返回给 client
+			                        -->
+			                        <value>id</value>
+			                        <value>username</value>
+			                        <value>email</value>
+			                    </list>
+	               		 </property>
                         <property name="id" value="0" />
                         <property name="name" value="HTTP and IMAP" />
                         <property name="description" value="Allows HTTP(S) and IMAP(S) protocols" />
                         <property name="serviceId" value="^(https?|imaps?)://.*" />
-                        <property name="evaluationOrder" value="10000001" />
-                    </bean>
+                        <property name="evaluationOrder" value="10000001" /> 
+                    </bean>  
                     <!--
                     Use the following definition instead of the above to further restrict access
                     to services within your domain (including subdomains).

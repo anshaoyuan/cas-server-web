@@ -1,4 +1,4 @@
-package com.sso.web.flow.OAuthBindCheckAction;
+package com.sso.web.flow;
 
 import org.scribe.up.provider.OAuthProvider;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;

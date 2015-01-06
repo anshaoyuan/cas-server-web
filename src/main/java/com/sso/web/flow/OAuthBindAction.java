@@ -1,4 +1,4 @@
-package com.sso.web.flow.OAuthBindAction;
+package com.sso.web.flow;
 
 import javax.servlet.http.HttpServletRequest;
 

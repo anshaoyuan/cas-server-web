@@ -1,4 +1,4 @@
-package com.sso.persondir.OAuthSingleRowJdbcPersonAttributeDao;
+package com.sso.persondir;
 
 import java.util.List;
 import java.util.Map;
